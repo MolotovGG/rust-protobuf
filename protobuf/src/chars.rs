@@ -2,7 +2,7 @@
 
 use std::borrow::Borrow;
 use std::fmt;
-use std::ops::Deref;
+use std::ops::{Deref, Range, RangeBounds};
 use std::str;
 use std::convert::AsRef;
 
@@ -31,6 +31,11 @@ impl Chars {
         Ok(Chars(bytes))
     }
 
+    /// unsafely convert from `Bytes`
+    pub const unsafe fn from_bytes_unchecked(bytes: Bytes) -> Chars {
+        Chars(bytes)
+    }
+
     /// Len in bytes.
     pub fn len(&self) -> usize {
         self.0.len()
@@ -39,6 +44,20 @@ impl Chars {
     /// Self-explanatory
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    /// get the inner repr bytes
+    pub fn inner(&self) -> &Bytes {
+        &self.0
+    }
+
+    pub fn byte_slice(&self, range: impl RangeBounds<usize>) -> Chars {
+        Self(self.0.slice(range))
+    }
+
+    pub fn checked_byte_slice(&self, range: impl RangeBounds<usize>) -> Result<Chars, str::Utf8Error> {
+        let slice = self.0.slice(range);
+        Self::from_bytes(slice)
     }
 }
 
@@ -79,12 +98,6 @@ impl Deref for Chars {
 impl Borrow<str> for Chars {
     fn borrow(&self) -> &str {
         &*self
-    }
-}
-
-impl AsRef<Bytes> for Chars {
-    fn as_ref(&self) -> &Bytes {
-        &self.0
     }
 }
 
